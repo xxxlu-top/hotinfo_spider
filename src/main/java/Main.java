@@ -1,5 +1,8 @@
+import job.WeixinJob;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.quartz.*;
+import org.quartz.impl.StdSchedulerFactory;
 import page.GuangMing;
 import page.WeixinPage;
 import pipeline.HtmlData;
@@ -11,26 +14,49 @@ import utils.XmlWorkerHelperUtil;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.Date;
 
 /**
  * 爬虫控制主类
  * Created by liu on 2018/4/9.
  */
 public class Main {
-    public static void main(String[] args) {
-//        Spider.create(new WeixinPage()).addUrl(Url.spider_weixin).addPipeline(new PostData()).run();
+    public static void main(String[] args) throws SchedulerException {
+//        Spider.create(new GuangMing()).addUrl(Url.spider_guangming).addPipeline(new PostGuangMing()).run();
 
-        Spider.create(new GuangMing()).addUrl(Url.spider_guangming).addPipeline(new PostGuangMing()).run();
+        SchedulerFactory schedulerFactory = new StdSchedulerFactory();
+        Scheduler scheduler = schedulerFactory.getScheduler();
 
-//        String html1 = getHtmlString("D:\\url\\doc\\超声-涨知识：超声综合筛查有助于预测死胎-丁香园最新文章.html");
-//        String html2 = getHtmlString("D:\\url\\doc\\胃轻瘫的发病机制-医脉通资讯.html");
-//
-//
-//        XmlWorkerHelperUtil.htmlToPDF(html1+html2,"D:\\url\\ceshi.pdf");
+        //创建任务
+        JobDetail jobDetail = JobBuilder.newJob(WeixinJob.class)
+                .withDescription("微信文章更新")
+                .withIdentity("微信", "蜘蛛")
+                .build();
+
+        //创建触发器
+//        long time=  System.currentTimeMillis() + 3*1000L; //3秒后启动任务
+//        Date statTime = new Date(time);
+        Trigger t = TriggerBuilder.newTrigger()
+                .withDescription("")
+                .withIdentity("ramTrigger", "ramTriggerGroup")
+                .withSchedule(SimpleScheduleBuilder
+                        .simpleSchedule()
+                        .withIntervalInHours(6)//每六小时执行一次
+                        .repeatForever())
+//                .startAt(statTime)  //默认当前时间启动
+//                .withSchedule(CronScheduleBuilder.cronSchedule("0/2 * * * * ?")) //两秒执行一次
+                .build();
+
+        //注册任务和定时器
+        scheduler.scheduleJob(jobDetail, t);
+
+        //6.启动 调度器
+        scheduler.start();
     }
 
     /**
      * 根据指定路径获取所有的文件
+     *
      * @param path
      * @return
      * @throws Exception
