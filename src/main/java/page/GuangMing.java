@@ -29,10 +29,16 @@ public class GuangMing implements PageProcessor {
             //新闻页
             NewsArticle article = new NewsArticle();
             Selectable body = page.getHtml().xpath("//*[@class=\"list_t\"]");
-            article.setContent(body.toString());
+            String content = body.toString();
+            //补全图片地址
+            content = content.replace("../../..","http://epaper.gmw.cn/gmrb");
+            article.setContent(content);
             article.setTitle(body.xpath("//div/h1/text()").toString());
             article.setUrl(page.getUrl().toString());
             article.setSource("光明日报");
+            article.setWriter(body.xpath("//div/div/b/text()").toString());
+
+            System.out.println(content);
             page.putField("news",article);
         }else if (page.getUrl().toString().contains("nbs.")){
             //列表页
